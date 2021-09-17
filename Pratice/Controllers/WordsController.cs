@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Pratice.Data;
+using Pratice.Helpers;
 using Pratice.Models;
 using System;
 using System.Collections.Generic;
@@ -23,18 +25,35 @@ namespace Pratice.Controllers
         //App -- /api/word?date=2021-05-10
         [HttpGet] // ação do metodo
         [Route("")]
-        public IActionResult WordsGet(DateTime? date)
+        public IActionResult WordsGet(DateTime? date, int? page, int? quantpages)
         {
             var item = _context.Words.AsQueryable();
             if (date.HasValue)
             {
                 item = item.Where(x => x.Create > date.Value || x.Update > date.Value);
             }
+            if (page.HasValue)
+            {
+                var totalQuantRegister = item.Count();
+                item = item.Skip((page.Value - 1) * quantpages.Value).Take(quantpages.Value);
+
+                var pagination = new Pagination
+                {
+                    Page = page.Value,
+                    QuantPages = quantpages.Value,
+                    TotalRegisters = totalQuantRegister,
+                    totalPages = (int)Math.Ceiling((double)totalQuantRegister / quantpages.Value)
+                };
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(pagination)); //convertendo para string usando Json
+
+                if(page > pagination.totalPages)
+                {
+                    return NotFound();
+                }
+            }
             return Ok(item);
         }
-
         
-
         //WEB -- /api/palavras/id
         [HttpGet]
         [Route("{id}")]
@@ -90,3 +109,4 @@ namespace Pratice.Controllers
         }
     }
 }
+
