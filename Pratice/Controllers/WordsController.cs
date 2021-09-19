@@ -25,28 +25,28 @@ namespace Pratice.Controllers
         //App -- /api/word?date=2021-05-10
         [HttpGet] // ação do metodo
         [Route("")]
-        public IActionResult WordsGet(DateTime? date, int? page, int? quantpages)
+        public IActionResult WordsGet([FromQuery] WordUrlQuery query)
         {
             var item = _context.Words.AsQueryable();
-            if (date.HasValue)
+            if (query.Date.HasValue)
             {
-                item = item.Where(x => x.Create > date.Value || x.Update > date.Value);
+                item = item.Where(x => x.Create > query.Date.Value || x.Update > query.Date.Value);
             }
-            if (page.HasValue)
+            if (query.Page.HasValue)
             {
                 var totalQuantRegister = item.Count();
-                item = item.Skip((page.Value - 1) * quantpages.Value).Take(quantpages.Value);
+                item = item.Skip((query.Page.Value - 1) * query.QuantPage.Value).Take(query.QuantPage.Value);
 
                 var pagination = new Pagination
                 {
-                    Page = page.Value,
-                    QuantPages = quantpages.Value,
+                    Page = query.Page.Value,
+                    QuantPages = query.QuantPage.Value,
                     TotalRegisters = totalQuantRegister,
-                    totalPages = (int)Math.Ceiling((double)totalQuantRegister / quantpages.Value)
+                    totalPages = (int)Math.Ceiling((double)totalQuantRegister / query.QuantPage.Value)
                 };
                 Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(pagination)); //convertendo para string usando Json
 
-                if(page > pagination.totalPages)
+                if(query.Page > pagination.totalPages)
                 {
                     return NotFound();
                 }
