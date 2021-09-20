@@ -10,6 +10,6 @@ namespace Pratice.Helpers
         public int Page { get; set; }
         public int QuantPages { get; set; }
         public int TotalRegisters { get; set; }
-        public int totalPages { get; set; }
+        public int TotalPages { get; set; }
     }
 }

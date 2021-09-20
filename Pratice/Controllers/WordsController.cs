@@ -4,6 +4,8 @@ using Newtonsoft.Json;
 using Pratice.Data;
 using Pratice.Helpers;
 using Pratice.Models;
+using Pratice.Repositories;
+using Pratice.Repositories.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,11 +17,11 @@ namespace Pratice.Controllers
     public class WordsController : Controller
     {
         
-        private readonly MimicContext _context;
+        private readonly IRepositoryWord _repository;
 
-        public WordsController(MimicContext context)
+        public WordsController(IRepositoryWord repository)
         {
-            _context = context;     
+            _repository = repository;     
         }
 
         //App -- /api/word?date=2021-05-10
@@ -27,31 +29,14 @@ namespace Pratice.Controllers
         [Route("")]
         public IActionResult WordsGet([FromQuery] WordUrlQuery query)
         {
-            var item = _context.Words.AsQueryable();
-            if (query.Date.HasValue)
-            {
-                item = item.Where(x => x.Create > query.Date.Value || x.Update > query.Date.Value);
-            }
-            if (query.Page.HasValue)
-            {
-                var totalQuantRegister = item.Count();
-                item = item.Skip((query.Page.Value - 1) * query.QuantPage.Value).Take(query.QuantPage.Value);
+            var item = _repository.WordsGet(query);
 
-                var pagination = new Pagination
-                {
-                    Page = query.Page.Value,
-                    QuantPages = query.QuantPage.Value,
-                    TotalRegisters = totalQuantRegister,
-                    totalPages = (int)Math.Ceiling((double)totalQuantRegister / query.QuantPage.Value)
-                };
-                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(pagination)); //convertendo para string usando Json
-
-                if(query.Page > pagination.totalPages)
-                {
-                    return NotFound();
-                }
+            if (query.Page > item.Pagination.TotalPages)
+            {
+                return NotFound();
             }
-            return Ok(item);
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(item.Pagination)); //convertendo para string usando Json
+            return Ok(item.ToList());
         }
         
         //WEB -- /api/palavras/id
@@ -59,12 +44,12 @@ namespace Pratice.Controllers
         [Route("{id}")]
         public IActionResult Get(int id)
         {
-            var obj = _context.Words.Find(id);
+            var obj = _repository.Get(id);
             if(obj == null)
             {
                 return NotFound(); //obj não encontrado
             }
-            return Ok(_context.Words.Find(id));
+            return Ok(obj);
         }
 
         //adcionando palavra
@@ -72,8 +57,8 @@ namespace Pratice.Controllers
         [Route("")]
         public IActionResult Register([FromBody] Word word)
         {
-            _context.Words.Add(word);
-            _context.SaveChanges();
+
+            _repository.Register(word);
             return Created($"/api/word/{word.Id}", word);
         }
 
@@ -81,15 +66,15 @@ namespace Pratice.Controllers
         [Route("{id}")]
         public IActionResult Update(int id, [FromBody] Word word)
         {
-            var obj = _context.Words.AsNoTracking().Where(x => x.Id == id); //ainda não sei
+            var obj = _repository.Get(id);
             if (obj == null)
             {
                 return NotFound(); //obj não encontrado
             }
 
-            word.Id = id;
-            _context.Words.Update(word);
-            _context.SaveChanges();
+            //word.Id = id;
+            _repository.Update(id, word);
+
             return Ok();
         }
 
@@ -97,14 +82,13 @@ namespace Pratice.Controllers
         [Route("{id}")]
         public IActionResult Delete(int id)
         {
-            var obj = _context.Words.Find(id);
+            var obj = _repository.Get(id);
             if (obj == null)
             {
                 return NotFound(); //obj não encontrado
             }
-
-            _context.Words.Remove(_context.Words.Find(id));
-            _context.SaveChanges();
+            _repository.Delete(id);
+           
             return NoContent(); // comment
         }
     }

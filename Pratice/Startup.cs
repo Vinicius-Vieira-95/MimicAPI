@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Pratice.Data;
+using Pratice.Repositories;
+using Pratice.Repositories.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +40,11 @@ namespace Pratice
             services.AddDbContext<MimicContext>(options =>
                      options.UseMySql(Configuration.GetConnectionString("MimicContext"), builder =>
                      builder.MigrationsAssembly("Pratice"))); //Bd Mysql mimicContext é local armazenado para requisição dos dados
-        }                                                      //Pratice é o nome do local da pasta do projeto 
+                                                              //Pratice é o nome do local da pasta do projeto
+            services.AddScoped<IRepositoryWord, RepositoryWord>();
+
+        }
+
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
