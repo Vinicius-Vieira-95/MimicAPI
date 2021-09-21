@@ -103,9 +103,12 @@ namespace Pratice.Controllers
         [Route("")]
         public IActionResult Register([FromBody] Word word)
         {
-
             _repository.Register(word);
-            return Created($"/api/word/{word.Id}", word);
+            WordDTO wordDTO = _mapper.Map<Word, WordDTO>(word);
+
+            wordDTO.Links.Add(new LinkDTO("self", Url.Link("GetName", new { id = wordDTO.Id }), "Get"));
+
+            return Created($"/api/word/{word.Id}", wordDTO);
         }
 
         [HttpPut ("{id}", Name = "UpdateName")]
@@ -120,6 +123,9 @@ namespace Pratice.Controllers
 
             //word.Id = id;
             _repository.Update(id, word);
+
+            WordDTO wordDTO = _mapper.Map<Word, WordDTO>(word);
+            wordDTO.Links.Add(new LinkDTO("self", Url.Link("GetName", new { id = wordDTO.Id }), "Get"));
 
             return Ok();
         }
