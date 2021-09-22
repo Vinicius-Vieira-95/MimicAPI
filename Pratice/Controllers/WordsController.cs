@@ -99,10 +99,21 @@ namespace Pratice.Controllers
         }
 
         //adcionando palavra
-        [HttpPost ("{id}", Name = "PostName")]
+        [HttpPost]
         [Route("")]
         public IActionResult Register([FromBody] Word word)
         {
+            if (word == null)
+            {
+                return BadRequest();
+            }
+            if (!ModelState.IsValid)
+            {
+                return UnprocessableEntity(ModelState);
+            }
+
+            word.Create = DateTime.Now;
+            word.Active = true;
             _repository.Register(word);
             WordDTO wordDTO = _mapper.Map<Word, WordDTO>(word);
 
@@ -121,8 +132,21 @@ namespace Pratice.Controllers
                 return NotFound(); //obj não encontrado
             }
 
-            //word.Id = id;
+            if (word == null)
+            {
+                return BadRequest();
+            }
+            if (!ModelState.IsValid)
+            {
+                return UnprocessableEntity(ModelState);
+            }
+
+            word.Id = id;
+            word.Active = obj.Active;
+            word.Create = obj.Create;
+            word.Update = DateTime.Now;
             _repository.Update(id, word);
+            
 
             WordDTO wordDTO = _mapper.Map<Word, WordDTO>(word);
             wordDTO.Links.Add(new LinkDTO("self", Url.Link("GetName", new { id = wordDTO.Id }), "Get"));
